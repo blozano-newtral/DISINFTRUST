@@ -6,6 +6,7 @@ from typing import Dict, Any
 
 import json
 import requests
+import pandas as pd
 from tqdm import tqdm
 from pymongo import MongoClient
 from bson import json_util
@@ -27,23 +28,20 @@ def parse_url(url) -> Dict[str, Any]:
 
 
 def api_call(claim):
-    monog_id = claim["_id"]
+    mongo_id, url = claim
 
-    filename = f"{args.save_dir}/{monog_id}.json"
+    filename = f"{args.save_dir}/{mongo_id}.json"
 
     if os.path.isfile(filename):
         return
 
-    url = claim["url"]
-
     try:
         parse = parse_url(url)
-        claim["parse_url"] = parse
 
         with open(filename, "w") as file:
-            file.write(json_util.dumps(claim))
+            file.write(json_util.dumps(parse))
     except Exception:
-        print(f"Coudn't extract url {url} from claim {claim['_id']}")
+        print(f"Coudn't extract url {url} from claim {mongo_id}")
 
 
 if __name__ == "__main__":
@@ -58,14 +56,9 @@ if __name__ == "__main__":
         print(f"Creating directory {args.save_dir}")
         os.makedirs(args.save_dir)
 
-    client = MongoClient(
-        "mongodb+srv://developers:Lu8Jv7SiweyPWL5u@clusternewtral.ybz85.mongodb.net/editor?retryWrites=true&w=majority"
-    )
-    db = client["claimreview"]["claim_reviews"]
+    df = pd.read_csv("claim_urls.csv")
+    print(f"Scraping up to {len(df)} claims urls")
 
-    doc_count = db.count_documents({})
-    results = db.find(filter={})  #%, batch_size=n_cpus)
-
-    print(f"Scraping up to {doc_count} claims urls")
+    call_arguments = [tuple(claim) for index, claim in df.iterrows()]
     with Pool(n_cpus) as pool:
-        r = list(tqdm(pool.imap(api_call, results), total=doc_count))
+        r = list(tqdm(pool.imap(api_call, call_arguments), total=len(call_arguments)))
