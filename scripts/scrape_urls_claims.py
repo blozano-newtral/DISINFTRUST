@@ -13,6 +13,7 @@ from bson import json_util
 
 n_cpus = multiprocessing.cpu_count()
 
+OVERWRITE = False
 
 def parse_url(url) -> Dict[str, Any]:
     base_url = "https://api.dev.newtral.es/extract/source"
@@ -32,7 +33,7 @@ def api_call(claim):
 
     filename = f"{args.save_dir}/{mongo_id}.json"
 
-    if os.path.isfile(filename):
+    if not OVERWRITE and os.path.isfile(filename):
         return
 
     try:
@@ -47,16 +48,19 @@ def api_call(claim):
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser()
-    # parser.add_argument("--sample", default=0, type=int)  # positional argument
     parser.add_argument("--save_dir", default="parse_claims_urls", type=str)
-    # parser.add_argument("--file_path", default=None, type=str)
+    parser.add_argument("--csv_file", default="claim_urls.csv", type=str)
+    parser.add_argument("--overwrite", action='store_false')
+    
     args = parser.parse_args()
+
+    OVERWRITE = args.overwrite
 
     if not os.path.exists(args.save_dir):
         print(f"Creating directory {args.save_dir}")
         os.makedirs(args.save_dir)
 
-    df = pd.read_csv("claim_urls.csv")
+    df = pd.read_csv(args.csv_file)
     print(f"Scraping up to {len(df)} claims urls")
 
     call_arguments = [tuple(claim) for index, claim in df.iterrows()]
