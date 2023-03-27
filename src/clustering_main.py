@@ -5,11 +5,10 @@ from sentence_transformers import SentenceTransformer
 from tqdm import tqdm
 import numpy as np
 from sklearn.decomposition import PCA
+from sklearn.cluster import AffinityPropagation
 import umap
 import argparse
 import clustering_config as conf
-import requests
-import json
 
 def compose_texts(df, columns = ['title', 'summary']):
 	return ['. '.join(k) for k in df[columns].values]
@@ -60,17 +59,6 @@ def make_outpath(configlist):
 	outf += '.csv'
 	return outf
 
-def log_to_logzio(df):
-    """
-    Log DataFrame to Logz.io via HTTP bulk API
-    """
-    logzio_token = 'dNNtYgTWTDauRykeswpwpzQTrTAXsoVy'
-    logzio_url = 'https://listener.logz.io:8071/?token={}'.format(logzio_token)
-    logs = df.to_dict(orient='records')
-    headers = {'Content-type': 'application/json', 'Accept': 'text/plain'}
-    response = requests.post(logzio_url, data=json.dumps(logs), headers=headers)
-    response.raise_for_status()
-
 if __name__ == '__main__':
 
 	parser = argparse.ArgumentParser()
@@ -120,5 +108,6 @@ if __name__ == '__main__':
 									method=conf.cluster_config['clusterer'], 
 									model=conf.cluster_config['embedder'].replace('/','-'))
 
-	sorted_df = df.sort_values(by='cluster_labels', key=lambda x: x.map(x.value_counts()))
-	sorted_df[conf.data_config["columns"]+["cluster_labels"]].reset_index().to_csv(outfile)
+	sorted_df = df.sort_values(by='cluster_labels', key=lambda x: x.map(x.value_counts()), ascending=False)
+	sorted_df = sorted_df[conf.data_config["columns"]+["cluster_labels"]]
+	sorted_df.to_csv(outfile)

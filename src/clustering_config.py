@@ -23,14 +23,14 @@ european_langs = ["hr",
 	"sv"]
 
 data_config = {
-"languages": european_langs, 
+"languages": ["en", "es"], 
 "columns": ["claimReviewed", "summary"] # claimReviewed, summary, text
 	}
 
 cluster_config = {
 "embedder": "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2", # symanto/sn-xlm-roberta-base-snli-mnli-anli-xnli
 "reducer": "umap", # PCA, umap, etc
-"clusterer": "hdbscan", # affinity, etc
+"clusterer": "affinity", # affinity, etc
 	}
 
 cluster_alg_config = {
